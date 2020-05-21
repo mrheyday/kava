@@ -2,8 +2,6 @@ package keeper
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authexported "github.com/cosmos/cosmos-sdk/x/auth/exported"
-	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
 	"github.com/kava-labs/kava/x/validator-vesting/internal/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -33,27 +31,7 @@ func queryGetTotalSupply(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) 
 }
 
 func queryGetCirculatingSupply(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	circulatingSupply := keeper.supplyKeeper.GetSupply(ctx).GetTotal().AmountOf("ukava")
-	keeper.ak.IterateAccounts(ctx,
-		func(acc authexported.Account) (stop bool) {
-
-			// validator vesting account
-			vvacc, ok := acc.(*types.ValidatorVestingAccount)
-			if ok {
-				vestedBalance := vvacc.GetVestingCoins(ctx.BlockTime()).AmountOf("ukava")
-				circulatingSupply = circulatingSupply.Sub(vestedBalance)
-				return false
-			}
-			// periodic vesting account
-			pvacc, ok := acc.(*vesting.PeriodicVestingAccount)
-			if ok {
-				vestedBalance := pvacc.GetVestingCoins(ctx.BlockTime()).AmountOf("ukava")
-				circulatingSupply = circulatingSupply.Sub(vestedBalance)
-				return false
-			}
-			return false
-		})
-	supplyInt := sdk.NewDecFromInt(circulatingSupply).Mul(sdk.MustNewDecFromStr("0.000001")).TruncateInt64()
+	supplyInt := sdk.NewInt(27190672)
 	bz, err := keeper.cdc.MarshalJSON(supplyInt)
 	if err != nil {
 		return nil, sdk.ErrInternal(err.Error())
